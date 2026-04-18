@@ -2,27 +2,26 @@ import requests
 from bs4 import BeautifulSoup
 
 url = "https://www.bloomlatte.jp/categories/2646842"
-headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
-}
+headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"}
 
 response = requests.get(url, headers=headers)
-soup = BeautifulSoup(response.text, "html.parser")
 
-# 【修正ポイント】 li ではなく div で探す
-items = soup.find_all("div", class_="item")
-print(f"取得した商品数: {len(items)}")
+# 1. 念のため、より強力な解析エンジン 'lxml' を使う（すでにインストール済みのはず）
+soup = BeautifulSoup(response.text, "lxml")
 
-# 商品名の一部が、生のHTMLコードの中に含まれているかチェック
-print(f"『ドット柄』という文字はHTMLにあるか: {'ドット柄' in response.text}")
+# 2. 「ドット柄」という文字を含んでいる要素を直接探す
+target_text = soup.find(string=lambda t: "ドット柄" in t if t else False)
 
-for item in items:
-    # 商品名は img タグの alt 属性に書かれていることを確認
-    img_tag = item.find("img")
-    if img_tag and img_tag.get("alt"):
-        name = img_tag.get("alt")
-        # 価格などの他の要素も、同じように div.item の中から探せます
-        print(f"商品名: {name}")
+if target_text:
+    print("【発見！】『ドット柄』という文字を見つけました。")
+    # その文字の「親の親の親」くらいまでのタグとクラス名を表示して正体を探る
+    parent = target_text.parent
+    print(f"直接のタグ: <{parent.name}> class={parent.get('class')}")
+    print(f"その親のタグ: <{parent.parent.name}> class={parent.parent.get('class')}")
+    print(f"さらにその親: <{parent.parent.parent.name}> class={parent.parent.parent.get('class')}")
+else:
+    print("BeautifulSoupの解析結果からは見つかりませんでした。")
 
-# もし価格も取りたいなら、ブラウザで価格の数字を右クリックして
-# どのクラス（例: itemPrice など）に入っているか教えてください！
+# 3. CSSセレクタという別の方法で item クラスを探してみる
+items_by_selector = soup.select(".item")
+print(f"CSSセレクタで見つかった件数: {len(items_by_selector)}")
