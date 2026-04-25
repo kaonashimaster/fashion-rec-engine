@@ -1,30 +1,43 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Windowsでグラフの日本語が文字化けしないための設定
-plt.rcParams['font.family'] = 'Meiryo'
-
 # 1. データの読み込み
-df = pd.read_csv("base_items_tops.csv")
+df = pd.read_csv("combined_base_data.csv")
 
-# 2. グラフの設定（ヒストグラム）
-plt.figure(figsize=(10, 6)) # グラフのサイズ
-plt.hist(df['価格'], bins=8, color='royalblue', edgecolor='black', alpha=0.7)
+# 2. 簡易的なカテゴリ判定ロジック
+def infer_category(name):
+    name = str(name).lower()
+    # 1. トップス
+    if any(k in name for k in ['top', 'tee', 'tシャツ', 'シャツ', 'ブラウス', 'blouse', 'tops', 'ニット', 'カーディガン']):
+        return 'Tops'
+    # 2. ワンピース
+    if any(k in name for k in ['dress', 'onepiece', 'ワンピース', 'ドレス']):
+        return 'Dress'
+    # 3. ボトムス（デニムやレギンスを追加）
+    if any(k in name for k in ['pants', 'skirt', 'bottoms', 'パンツ', 'スカート', 'denim', 'ジーンズ', 'レギンス']):
+        return 'Bottoms'
+    # 4. 小物・水着（swimやbagをここに集約）
+    if any(k in name for k in ['bag', 'accessories', 'ピアス', 'ネックレス', 'バッグ', 'swim', '水着', 'socks', '靴下']):
+        return 'Acc/Swim/Small'
+    
+    # どれにも当てはまらないものが Other
+    return 'Other'
 
-# 3. タイトルとラベルの追加
-plt.title("BASE某ショップ：トップスの価格帯分布", fontsize=16, fontweight='bold')
-plt.xlabel("価格 (円)", fontsize=14)
-plt.ylabel("商品数", fontsize=14)
+df['Category'] = df['商品名'].apply(infer_category)
 
-# 4. 平均値の線を引く（統計学徒らしいワンポイント！）
-mean_price = df['価格'].mean()
-plt.axvline(mean_price, color='red', linestyle='dashed', linewidth=2, label=f'平均価格: ¥{mean_price:.0f}')
-plt.legend()
+# 3. 集計（ショップごと、カテゴリごとの件数）
+cat_counts = df.groupby(['ショップ名', 'Category']).size().unstack(fill_value=0)
 
-# 見やすくするためのグリッド線
+# 4. グラフ作成
+plt.rcParams['font.family'] = 'Meiryo' # Windowsの日本語文字化け対策
+cat_counts.plot(kind='bar', stacked=True, figsize=(10, 6), colormap='viridis')
+
+plt.title("BASE 3ショップ比較：カテゴリ別商品展開数", fontsize=15)
+plt.xlabel("ショップ名", fontsize=12)
+plt.ylabel("商品数", fontsize=12)
+plt.legend(title="カテゴリ", bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.xticks(rotation=0)
 plt.grid(axis='y', linestyle='--', alpha=0.7)
 
-# 5. 画像として保存して画面に表示
-plt.savefig("price_histogram.png", dpi=300, bbox_inches='tight')
-print("グラフを 'price_histogram.png' として保存しました！")
-plt.show() # 画面にもポップアップで表示されます
+plt.tight_layout()
+plt.show()
