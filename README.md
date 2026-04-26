@@ -9,7 +9,7 @@
 - **スクレイピング**: Requests, BeautifulSoup4 (lxml)
 - **データ処理**: Pandas
 - **可視化**: Matplotlib
-- **環境**: VS Code, Jupyter Notebook (Google Colabリモート接続連携)
+- **環境**: VS Code
 
 ## 構成ファイル (Files)
 - `detective.py`: サイトのHTML構造（クラス名等）を解析・特定するための事前偵察スクリプト
